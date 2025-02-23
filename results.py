@@ -1,5 +1,3 @@
-import os
-import shutil
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
@@ -8,143 +6,106 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from twilio.rest import Client
+import shutil
 import time
+import os
 
-# Twilio API credentials (Replace with your actual values)
-account_sid = 'AC3bab56e93cacdd77717f5aac09ebb044'
-auth_token = '9b42cfb5e9accbf376e584c92eff4fca'
-twilio_phone_number = '+16057777609'
-your_phone_number = '+917681985728'
+# Twilio API credentials
+account_sid = "AC63659c9f9e3776f63be2d5d4e23cf354"
+auth_token = "99f2a5d09864e6adcb5be519d14b2f3b"
+twilio_phone_number = "+15078660968"
+your_phone_number = "+917986313672"
 
 # Student details
-year = '2024'
-month = '12'
-course_type = 'C'
-course = '1703'
-semester = '170301'
-roll_number = '17032400172'
+year = "2024"
+month = "12"
+course_type = "C"
+course = "1703"
+semester = "170301"
+roll_number = "2230423"
 
 # URL of the result page
-url = 'https://collegeadmissions.gndu.ac.in/studentArea/GNDUEXAMRESULT.aspx'
+url = "https://collegeadmissions.gndu.ac.in/studentArea/GNDUEXAMRESULT.aspx"
 
-# Auto-detect browser
+# Function to find installed browser path
 def get_browser_path():
-    paths = [
-        "/usr/bin/brave-browser",
-        "/usr/bin/google-chrome",
-        "/usr/bin/chromium-browser",
-        "/usr/bin/chromium"
-    ]
-    for path in paths:
-        if shutil.which(path):
+    paths = {
+        "brave": shutil.which("brave") or "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
+        "chrome": shutil.which("chrome") or "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        "chromium": shutil.which("chromium") or shutil.which("chromium-browser")
+    }
+    for name, path in paths.items():
+        if path and os.path.exists(path):
+            print(f"✅ Using {name.capitalize()}: {path}")
             return path
     raise Exception("❌ No supported browser found. Install Brave, Chromium, or Chrome!")
-
 
 # Function to set up Selenium WebDriver
 def setup_driver():
     options = webdriver.ChromeOptions()
+    options.binary_location = get_browser_path()
     options.add_argument("--headless")  # Runs in the background
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--remote-debugging-port=9222")  # Debugging port
 
-    # Detect and set browser binary location
-    options.binary_location = get_browser_path()
-
-    # Install WebDriver automatically
-    driver_path = ChromeDriverManager().install()
-    service = Service(driver_path)
-
+    service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
     return driver
 
+# Function to check if the result is available
 def is_result_available(driver):
     driver.get(url)
-    time.sleep(2)  # Let page load
+    time.sleep(2)
 
+    # Select Year and Month
+    Select(driver.find_element(By.ID, "DrpDwnYear")).select_by_value(year)
+    Select(driver.find_element(By.ID, "DrpDwnMonth")).select_by_value(month)
+
+    # Select Course Type
+    WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "DropDownCourseType"))).click()
+    Select(driver.find_element(By.ID, "DropDownCourseType")).select_by_value(course_type)
+
+    # Wait for Course Dropdown
+    WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "DropDownCourse"))).click()
+    Select(driver.find_element(By.ID, "DropDownCourse")).select_by_value(course)
+
+    # Wait for Semester Dropdown
+    WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "DropDownSemester"))).click()
+    Select(driver.find_element(By.ID, "DropDownSemester")).select_by_value(semester)
+
+    # Enter Roll Number and Check Result
+    driver.find_element(By.ID, "TextBoxRollNo").send_keys(roll_number)
+    driver.find_element(By.ID, "btnResult").click()
+    time.sleep(2)
+
+    # Check if results are displayed
     try:
-        # Select Year and Month
-        Select(driver.find_element(By.ID, 'DrpDwnYear')).select_by_value(year)
-        Select(driver.find_element(By.ID, 'DrpDwnMonth')).select_by_value(month)
-
-        # Select Course Type (CBES)
-        course_type_dropdown = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, 'DropDownCourseType'))
-        )
-        Select(course_type_dropdown).select_by_value(course_type)
-
-        # Wait for Course Dropdown (`DrpDwnCMaster`) to Load
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, 'DrpDwnCMaster'))
-        )
-
-        # Get Available Course Options
-        course_dropdown = Select(driver.find_element(By.ID, 'DrpDwnCMaster'))
-        options = [opt.get_attribute("value") for opt in course_dropdown.options]
-        print("Available Courses:", options)  # DEBUG
-
-        # Check if "1703" is Present
-        if course in options:
-            course_dropdown.select_by_value(course)
-        else:
-            print(f"Error: Course '{course}' not found in dropdown!")
-            return False
-
-        # Wait for Semester Dropdown (`DrpDwnCdetail`) to Load
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, 'DrpDwnCdetail'))
-        )
-
-        # Select Semester
-        Select(driver.find_element(By.ID, 'DrpDwnCdetail')).select_by_value(semester)
-
-        # Enter Roll Number
-        roll_input = driver.find_element(By.ID, 'textboxRno')
-        roll_input.clear()
-        roll_input.send_keys(roll_number)
-
-        # Submit
-        submit_button = driver.find_element(By.ID, 'buttonShowResult')
-        submit_button.click()
-
-        time.sleep(3)  # Allow result to load
-
-        # Check if the result is displayed
-        try:
-            result_element = driver.find_element(By.ID, 'result-indicator-id')  # Update this ID if incorrect
-            if "Result is out" in result_element.text:
-                return True
-        except:
-            return False
-
-    except Exception as e:
-        print(f"⚠️ Error checking result: {e}")
+        WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID, "lblResult")))
+        return True
+    except:
         return False
 
 # Function to send an SMS notification
 def send_sms():
     client = Client(account_sid, auth_token)
     message = client.messages.create(
-        body="Your GNDU result is out! Check it at: " + url,
+        body="🎉 Your GNDU exam results are out! Check now: https://collegeadmissions.gndu.ac.in/studentArea/GNDUEXAMRESULT.aspx",
         from_=twilio_phone_number,
         to=your_phone_number
     )
-    print(f"📩 Message sent: {message.sid}")
+    print(f"📩 SMS sent! SID: {message.sid}")
 
-# Main function to keep checking the result
+# Main function
 def main():
     driver = setup_driver()
-
-    while True:
-        if is_result_available(driver):
-            send_sms()
-            break
-        print("🔄 Result not available yet. Checking again in 30 minutes...")
-        time.sleep(1800)  # Wait for 30 minutes before checking again
-
+    if is_result_available(driver):
+        print("✅ Results are available!")
+        send_sms()
+    else:
+        print("❌ Results are NOT available yet.")
     driver.quit()
 
+# Run the script
 if __name__ == "__main__":
     main()
