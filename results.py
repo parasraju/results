@@ -2,6 +2,8 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from twilio.rest import Client
 import time
@@ -23,77 +25,81 @@ roll_number = '17032400172'
 # URL of the result page
 url = 'https://collegeadmissions.gndu.ac.in/studentArea/GNDUEXAMRESULT.aspx'
 
-# Function to set up Selenium WebDriver
+# Function to set up Selenium WebDriver with headless mode
 def setup_driver():
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")  # Runs in the background
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    
+    options.add_argument("--remote-debugging-port=9222")  # Debugging port
+
+    # Use WebDriverManager to install the latest ChromeDriver
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
     return driver
-
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
 def is_result_available(driver):
     driver.get(url)
     time.sleep(2)  # Let page load
 
-    # Select Year and Month
-    Select(driver.find_element(By.ID, 'DrpDwnYear')).select_by_value(year)
-    Select(driver.find_element(By.ID, 'DrpDwnMonth')).select_by_value(month)
-
-    # Select Course Type (CBES)
-    course_type_dropdown = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.ID, 'DropDownCourseType'))
-    )
-    Select(course_type_dropdown).select_by_value(course_type)
-
-    # **Wait for Course Dropdown (`DrpDwnCMaster`) to Load**
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.ID, 'DrpDwnCMaster'))
-    )
-
-    # **Get Available Course Options**
-    course_dropdown = Select(driver.find_element(By.ID, 'DrpDwnCMaster'))
-    options = [opt.get_attribute("value") for opt in course_dropdown.options]
-    print("Available Courses:", options)  # DEBUG
-
-    # **Check if "1703" is Present**
-    if course in options:
-        course_dropdown.select_by_value(course)
-    else:
-        print(f"Error: Course '{course}' not found in dropdown!")
-        return False
-
-    # **Wait for Semester Dropdown (`DrpDwnCdetail`) to Load**
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.ID, 'DrpDwnCdetail'))
-    )
-
-    # Select Semester
-    Select(driver.find_element(By.ID, 'DrpDwnCdetail')).select_by_value(semester)
-
-    # Enter Roll Number
-    roll_input = driver.find_element(By.ID, 'textboxRno')
-    roll_input.clear()
-    roll_input.send_keys(roll_number)
-
-    # Submit
-    submit_button = driver.find_element(By.ID, 'buttonShowResult')
-    submit_button.click()
-
-    time.sleep(3)  # Allow result to load
-
-    # **Check if the result is displayed**
     try:
-        result_element = driver.find_element(By.ID, 'result-indicator-id')  # Update this ID if incorrect
-        if "Result is out" in result_element.text:
-            return True
-    except:
+        # Select Year and Month
+        Select(driver.find_element(By.ID, 'DrpDwnYear')).select_by_value(year)
+        Select(driver.find_element(By.ID, 'DrpDwnMonth')).select_by_value(month)
+
+        # Select Course Type (CBES)
+        course_type_dropdown = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, 'DropDownCourseType'))
+        )
+        Select(course_type_dropdown).select_by_value(course_type)
+
+        # Wait for Course Dropdown (`DrpDwnCMaster`) to Load
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, 'DrpDwnCMaster'))
+        )
+
+        # Get Available Course Options
+        course_dropdown = Select(driver.find_element(By.ID, 'DrpDwnCMaster'))
+        options = [opt.get_attribute("value") for opt in course_dropdown.options]
+        print("Available Courses:", options)  # DEBUG
+
+        # Check if "1703" is Present
+        if course in options:
+            course_dropdown.select_by_value(course)
+        else:
+            print(f"Error: Course '{course}' not found in dropdown!")
+            return False
+
+        # Wait for Semester Dropdown (`DrpDwnCdetail`) to Load
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, 'DrpDwnCdetail'))
+        )
+
+        # Select Semester
+        Select(driver.find_element(By.ID, 'DrpDwnCdetail')).select_by_value(semester)
+
+        # Enter Roll Number
+        roll_input = driver.find_element(By.ID, 'textboxRno')
+        roll_input.clear()
+        roll_input.send_keys(roll_number)
+
+        # Submit
+        submit_button = driver.find_element(By.ID, 'buttonShowResult')
+        submit_button.click()
+
+        time.sleep(3)  # Allow result to load
+
+        # Check if the result is displayed
+        try:
+            result_element = driver.find_element(By.ID, 'result-indicator-id')  # Update this ID if incorrect
+            if "Result is out" in result_element.text:
+                return True
+        except:
+            return False
+
+    except Exception as e:
+        print("Error occurred:", str(e))
         return False
 
     return False
