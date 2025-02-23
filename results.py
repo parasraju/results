@@ -6,7 +6,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from twilio.rest import Client
-import shutil
 import time
 import os
 
@@ -27,23 +26,13 @@ roll_number = "2230423"
 # URL of the result page
 url = "https://collegeadmissions.gndu.ac.in/studentArea/GNDUEXAMRESULT.aspx"
 
-# Function to find installed browser path
-def get_browser_path():
-    paths = {
-        "brave": shutil.which("brave") or "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
-        "chrome": shutil.which("chrome") or "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-        "chromium": shutil.which("chromium") or shutil.which("chromium-browser")
-    }
-    for name, path in paths.items():
-        if path and os.path.exists(path):
-            print(f"✅ Using {name.capitalize()}: {path}")
-            return path
-    raise Exception("❌ No supported browser found. Install Brave, Chromium, or Chrome!")
+# **Manually Set Your Brave Browser Path**
+BRAVE_PATH = "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"
 
 # Function to set up Selenium WebDriver
 def setup_driver():
     options = webdriver.ChromeOptions()
-    options.binary_location = get_browser_path()
+    options.binary_location = BRAVE_PATH  # Manually setting the path
     options.add_argument("--headless")  # Runs in the background
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
