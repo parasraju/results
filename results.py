@@ -1,9 +1,11 @@
+import os
+import shutil
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from twilio.rest import Client
 import time
@@ -25,7 +27,17 @@ roll_number = '17032400172'
 # URL of the result page
 url = 'https://collegeadmissions.gndu.ac.in/studentArea/GNDUEXAMRESULT.aspx'
 
-# Function to set up Selenium WebDriver with headless mode
+# Auto-detect browser
+def get_browser_path():
+    possible_browsers = ["brave-browser", "chromium-browser", "google-chrome", "chrome"]
+    for browser in possible_browsers:
+        path = shutil.which(browser)  # Check if the browser exists
+        if path:
+            print(f"✅ Detected browser: {browser} at {path}")
+            return path
+    raise Exception("❌ No supported browser found. Install Brave, Chromium, or Chrome!")
+
+# Function to set up Selenium WebDriver
 def setup_driver():
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")  # Runs in the background
@@ -34,8 +46,13 @@ def setup_driver():
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--remote-debugging-port=9222")  # Debugging port
 
-    # Use WebDriverManager to install the latest ChromeDriver
-    service = Service(ChromeDriverManager().install())
+    # Detect and set browser binary location
+    options.binary_location = get_browser_path()
+
+    # Install WebDriver automatically
+    driver_path = ChromeDriverManager().install()
+    service = Service(driver_path)
+
     driver = webdriver.Chrome(service=service, options=options)
     return driver
 
@@ -99,10 +116,8 @@ def is_result_available(driver):
             return False
 
     except Exception as e:
-        print("Error occurred:", str(e))
+        print(f"⚠️ Error checking result: {e}")
         return False
-
-    return False
 
 # Function to send an SMS notification
 def send_sms():
@@ -112,17 +127,17 @@ def send_sms():
         from_=twilio_phone_number,
         to=your_phone_number
     )
-    print(f"Message sent: {message.sid}")
+    print(f"📩 Message sent: {message.sid}")
 
 # Main function to keep checking the result
 def main():
     driver = setup_driver()
-    
+
     while True:
         if is_result_available(driver):
             send_sms()
             break
-        print("Result not available yet. Checking again in 30 minutes...")
+        print("🔄 Result not available yet. Checking again in 30 minutes...")
         time.sleep(1800)  # Wait for 30 minutes before checking again
 
     driver.quit()
