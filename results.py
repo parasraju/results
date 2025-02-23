@@ -16,6 +16,20 @@ auth_token = '9b42cfb5e9accbf376e584c92eff4fca'
 twilio_phone_number = '+16057777609'
 your_phone_number = '+917681985728'
 
+import shutil
+
+def get_browser_path():
+    paths = [
+        "/usr/bin/brave-browser",
+        "/usr/bin/google-chrome",
+        "/usr/bin/chromium-browser",
+        "/usr/bin/chromium"
+    ]
+    for path in paths:
+        if shutil.which(path):
+            return path
+    raise Exception("❌ No supported browser found. Install Brave, Chromium, or Chrome!")
+
 # Student details
 year = '2024'
 month = '12'
