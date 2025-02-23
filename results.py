@@ -16,20 +16,6 @@ auth_token = '9b42cfb5e9accbf376e584c92eff4fca'
 twilio_phone_number = '+16057777609'
 your_phone_number = '+917681985728'
 
-import shutil
-
-def get_browser_path():
-    paths = [
-        "/usr/bin/brave-browser",
-        "/usr/bin/google-chrome",
-        "/usr/bin/chromium-browser",
-        "/usr/bin/chromium"
-    ]
-    for path in paths:
-        if shutil.which(path):
-            return path
-    raise Exception("❌ No supported browser found. Install Brave, Chromium, or Chrome!")
-
 # Student details
 year = '2024'
 month = '12'
@@ -43,13 +29,17 @@ url = 'https://collegeadmissions.gndu.ac.in/studentArea/GNDUEXAMRESULT.aspx'
 
 # Auto-detect browser
 def get_browser_path():
-    possible_browsers = ["brave-browser", "chromium-browser", "google-chrome", "chrome"]
-    for browser in possible_browsers:
-        path = shutil.which(browser)  # Check if the browser exists
-        if path:
-            print(f"✅ Detected browser: {browser} at {path}")
+    paths = [
+        "/usr/bin/brave-browser",
+        "/usr/bin/google-chrome",
+        "/usr/bin/chromium-browser",
+        "/usr/bin/chromium"
+    ]
+    for path in paths:
+        if shutil.which(path):
             return path
     raise Exception("❌ No supported browser found. Install Brave, Chromium, or Chrome!")
+
 
 # Function to set up Selenium WebDriver
 def setup_driver():
