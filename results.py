@@ -10,24 +10,24 @@ import time
 import os
 
 # Twilio API credentials
-account_sid = "AC63659c9f9e3776f63be2d5d4e23cf354"
-auth_token = "99f2a5d09864e6adcb5be519d14b2f3b"
-twilio_phone_number = "+15078660968"
-your_phone_number = "+917986313672"
+account_sid = ""
+auth_token = ""
+twilio_phone_number = ""
+your_phone_number = "+"
 
 # Student details
-year = "2024"
-month = "12"
-course_type = "C"
-course = "1703"
-semester = "170301"
-roll_number = "2230423"
+year = "
+month = ""
+course_type = ""
+course = ""
+semester = ""
+roll_number = ""
 
 # URL of the result page
-url = "https://collegeadmissions.gndu.ac.in/studentArea/GNDUEXAMRESULT.aspx"
+url = ""
 
 # **Manually Set Your Brave Browser Path**
-BRAVE_PATH = "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"
+BRAVE_PATH = ""
 
 # Function to set up Selenium WebDriver
 def setup_driver():
