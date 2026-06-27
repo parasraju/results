@@ -56,7 +56,7 @@ def is_result_available(driver):
     driver.find_element(By.ID, "TextBoxRollNo").send_keys(roll_number)
     driver.find_element(By.ID, "btnResult").click()
     time.sleep(2)
-
+#
     try:
         WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID, "lblResult")))
         return True
